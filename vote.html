@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>クイズ投票</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+  body { font-family: 'Noto Sans JP', sans-serif; background: #1a1a2e; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+  h1 { font-size: 1.6rem; letter-spacing: 2px; margin-bottom: 8px; }
+  p { color: #aaa; font-size: 0.9rem; margin-bottom: 25px; }
+  .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 30px; width: 100%; max-width: 420px; }
+  .q-num { text-align: center; font-size: 0.85rem; color: #aaa; margin-bottom: 6px; }
+  input[type="number"] { width: 70px; padding: 10px; font-size: 1.2rem; text-align: center; border-radius: 10px; border: 2px solid #4a90e2; background: #111; color: #fff; font-weight: bold; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+  button { padding: 24px; font-size: 1.3rem; border: none; border-radius: 14px; background: linear-gradient(145deg, #4a90e2, #3568b4); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(74,144,226,0.3); transition: 0.1s; }
+  button:active { transform: scale(0.96); }
+  button.selected { background: linear-gradient(145deg, #ff9800, #e68900); box-shadow: 0 0 0 4px rgba(255,152,0,0.4); }
+  .status { text-align: center; margin-top: 20px; min-height: 1.5em; color: #ffd700; font-weight: 700; font-size: 1rem; }
+</style>
+</head>
+<body>
+  <h1>回答を送信</h1>
+  <p>スライドの問題番号と合わせて、①～④を選んでください</p>
+
+  <div class="card">
+    <div class="q-num">問題番号を入力</div>
+    <div style="text-align:center;">
+      <input type="number" id="qNum" value="1" min="1" max="99">
+    </div>
+
+    <div class="choices">
+      <button onclick="send(1)" id="b1">①</button>
+      <button onclick="send(2)" id="b2">②</button>
+      <button onclick="send(3)" id="b3">③</button>
+      <button onclick="send(4)" id="b4">④</button>
+    </div>
+
+    <div class="status" id="msg">準備完了</div>
+  </div>
+
+<script>
+  // ★ ここを自分のGAS URLに置き換え
+  const GAS_URL = 'https://script.google.com/a/macros/cu.nri.co.jp/s/AKfycbxkJT6fy4Qgue_a8cgz90sIiOlnROd6g71mxOaWhuW2Fn0qCLq5Lap-TDdMO-9QxBSyoA/exec';
+
+  function send(option) {
+    const q = parseInt(document.getElementById('qNum').value) || 1;
+    
+    // 見た目更新
+    document.querySelectorAll('.choices button').forEach(b => b.classList.remove('selected'));
+    document.getElementById('b'+option).classList.add('selected');
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({q: q, answer: option})
+    })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('msg').textContent = `第${q}問 → ${['①','②','③','④'][option-1]} を送信しました`;
+    })
+    .catch(err => {
+      document.getElementById('msg').textContent = '送信エラー（インターネット接続を確認）';
+      console.error(err);
+    });
+  }
+</script>
+</body>
+</html>
