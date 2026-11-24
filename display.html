@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>クイズ集計</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+  body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+  h1 { font-size: 2rem; letter-spacing: 3px; margin-bottom: 5px; }
+  .sub { color: #ccc; font-size: 0.9rem; margin-bottom: 25px; }
+  .board { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2); border-radius: 24px; padding: 30px; width: 100%; max-width: 720px; }
+  .summary { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
+  .card { background: rgba(255,255,255,0.1); border-radius: 16px; padding: 20px 24px; min-width: 120px; text-align: center; }
+  .big { font-size: 2.5rem; font-weight: 700; color: #ffd700; }
+  .small { font-size: 0.85rem; color: #aaa; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 1.1rem; }
+  th { background: rgba(255,255,255,0.15); padding: 12px; text-align: center; }
+  td { padding: 14px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .ans { font-size: 1.4rem; font-weight: 700; color: #4fc3f7; }
+  .empty { color: #777; }
+</style>
+</head>
+<body>
+  <h1>🏆 リアルタイム集計</h1>
+  <p class="sub">GASから自動受信中（別PC/スマホからの回答も即反映）</p>
+
+  <div class="board">
+    <div class="summary">
+      <div class="card">
+        <div class="big" id="count">0</div>
+        <div class="small">回答済み問題数</div>
+      </div>
+      <div class="card">
+        <div class="big" id="latest">-</div>
+        <div class="small">最新の問題</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>問題</th><th>選択</th><th>受信時刻</th><th>状態</th></tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="4" class="empty">データを受信中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<script>
+  // ★ ここを自分のGAS URLに置き換え（doGet用、同じURLでOK）
+  const GAS_URL = 'https://script.google.com/a/macros/cu.nri.co.jp/s/AKfycbxkJT6fy4Qgue_a8cgz90sIiOlnROd6g71mxOaWhuW2Fn0qCLq5Lap-TDdMO-9QxBSyoA/exec';
+
+  const labels = ['①','②','③','④'];
+
+  function update() {
+    fetch(GAS_URL, {method: 'GET'})
+      .then(r => r.json())
+      .then(data => {
+        const keys = Object.keys(data).map(Number).sort((a,b)=>a-b);
+        const tbody = document.getElementById('tbody');
+        
+        if (keys.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty">まだ受信なし</td></tr>';
+          document.getElementById('count').textContent = 0;
+          document.getElementById('latest').textContent = '-';
+          return;
+        }
+
+        let html = '';
+        let latest = '-';
+        keys.forEach(q => {
+          const item = data[q];
+          latest = q;
+          const timeStr = item.time ? new Date(item.time).toLocaleString('ja-JP') : '-';
+          html += `<tr>
+            <td>第${q}問</td>
+            <td class="ans">${labels[item.answer-1] || '-'}</td>
+            <td>${timeStr}</td>
+            <td style="color:#ffd700;">受信済</td>
+          </tr>`;
+        });
+
+        tbody.innerHTML = html;
+        document.getElementById('count').textContent = keys.length;
+        document.getElementById('latest').textContent = latest !== '-' ? `第${latest}問` : '-';
+      })
+      .catch(e => {
+        console.log('取得エラー', e);
+      });
+  }
+
+  // 初回＋1秒ごとに自動更新
+  update();
+  setInterval(update, 1000);
+</script>
+</body>
+</html>
